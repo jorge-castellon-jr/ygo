@@ -1,0 +1,1 @@
+@tailwind base;@tailwind components;@tailwind utilities;.flex-end{justify-content:flex-end}.bar{@apply bg-gray-800 flex h-16 items-center justify-center fixed w-full z-30}.button{@apply bg-gray-900 text-gray-300 px-3 py-2 rounded-md text-sm font-medium}.button.hover:hover{@apply cursor-pointer bg-gray-700 text-white}
