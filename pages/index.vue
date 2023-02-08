@@ -2,8 +2,9 @@
   <div>
     <TopBar />
     <Board class="my-16" :h="7" :w="7" />
-    <CardTable />
+    <OverlayAttack />
     <BottomBar />
+    <CardTable />
   </div>
 </template>
 

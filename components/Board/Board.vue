@@ -43,13 +43,10 @@ defineProps({
   w: Number,
 });
 
-const highlight_positions: Ref<number[]> = ref([]);
 const pieceToMove: any = ref({
   name: "",
   position: 0,
 });
-
-const isMoving = ref(false);
 
 const getLayout = (row: number, cell: number) => {
   switch (sessionStore.getLayoutPosition(row, cell)) {
@@ -89,23 +86,19 @@ const highlightMovePiece = (row: number, cell: number) => {
     sessionStore.resetHighlights();
     sessionStore.is_moving = true;
     sessionStore.move_highlight_positions = [
-      sessionStore.currentPosition(row, cell) - 10,
-      sessionStore.currentPosition(row, cell) + 10,
-      sessionStore.currentPosition(row, cell) - 1,
-      sessionStore.currentPosition(row, cell) + 1,
+      sessionStore.getFullPosition(row, cell) - 10,
+      sessionStore.getFullPosition(row, cell) + 10,
+      sessionStore.getFullPosition(row, cell) - 1,
+      sessionStore.getFullPosition(row, cell) + 1,
     ];
+    sessionStore.piece_to_move = sessionStore.getPiece(row, cell) as PieceInterface;
     pieceToMove.value = sessionStore.getPiece(row, cell);
   } else {
     sessionStore.resetHighlights();
   }
 };
 const movePiece = (row: number, cell: number) => {
-  const piece = sessionStore.getPiece(
-    pieceToMove.value.position.toString()[0],
-    pieceToMove.value.position.toString()[1]
-  ) as PieceInterface;
-
-  sessionStore.changePiecePosition(piece, row, cell);
+  sessionStore.changePiecePosition(row, cell);
   sessionStore.resetHighlights();
 };
 const summonPiece = (row: number, cell: number) => {
@@ -114,7 +107,7 @@ const summonPiece = (row: number, cell: number) => {
     name: summonCard.name,
     id: summonCard.id,
     team: sessionStore.whos_turn,
-    position: sessionStore.currentPosition(row, cell),
+    position: sessionStore.getFullPosition(row, cell),
     history: { [sessionStore.turns_left]: false },
   };
 
@@ -122,17 +115,8 @@ const summonPiece = (row: number, cell: number) => {
   sessionStore.resetHighlights();
 };
 const attackPiece = (row: number, cell: number) => {
-  alert("attacking " + sessionStore.getPiece(row, cell)?.name);
-  // const summonCard: Card = sessionStore.getSummonCard;
-  // const piece: PieceInterface = {
-  //   name: summonCard.name,
-  //   id: summonCard.id,
-  //   team: sessionStore.whos_turn,
-  //   position: sessionStore.currentPosition(row, cell),
-  //   history: { [sessionStore.turns_left]: false },
-  // };
-  // sessionStore.addPiece(piece);
-  // sessionStore.resetHighlights();
+  const defenderPiece = sessionStore.getPiece(row, cell) as PieceInterface;
+  sessionStore.openAttackOverlay(defenderPiece.id);
 };
 </script>
 
@@ -157,6 +141,10 @@ const attackPiece = (row: number, cell: number) => {
         }
         &.attack {
           @apply bg-red-500;
+          &:after {
+            content: "";
+            @apply absolute inset-0 z-40;
+          }
         }
       }
     }

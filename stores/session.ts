@@ -21,6 +21,7 @@ export const useSessionStore = defineStore("SessionStore", {
         history: { 99: false },
       },
     ];
+
     const move_highlight_positions: number[] = [];
     const summon_highlight_positions: number[] = [];
 
@@ -79,6 +80,16 @@ export const useSessionStore = defineStore("SessionStore", {
       },
     ];
 
+    const piece_to_move: PieceInterface = {
+      name: "",
+      id: "",
+      team: "",
+      position: 0,
+      history: {},
+    };
+
+    const attacking_cards: Card[] = [];
+
     return {
       player_turn: true,
       turns_left: 99,
@@ -94,6 +105,7 @@ export const useSessionStore = defineStore("SessionStore", {
       ],
       is_moving: false,
       is_summoning: false,
+      is_attacking: false,
       is_card_table_open: false,
       card_to_summon: "",
 
@@ -101,6 +113,8 @@ export const useSessionStore = defineStore("SessionStore", {
       cards,
       move_highlight_positions,
       summon_highlight_positions,
+      piece_to_move,
+      attacking_cards,
       board_pieces,
     };
   },
@@ -110,11 +124,8 @@ export const useSessionStore = defineStore("SessionStore", {
       this.player_turn = !this.player_turn;
       this.has_summoned = false;
     },
-    changePiecePosition(
-      piece: PieceInterface,
-      newRow: number,
-      newCell: number
-    ) {
+    changePiecePosition(newRow: number, newCell: number) {
+      let piece = this.piece_to_move;
       this.resetHighlights();
       let pieceIndex = this.board_pieces.findIndex(
         (bp) => bp.position == piece.position
@@ -128,7 +139,7 @@ export const useSessionStore = defineStore("SessionStore", {
         {},
         {
           ...piece,
-          position: this.currentPosition(newRow, newCell),
+          position: this.getFullPosition(newRow, newCell),
         }
       );
 
@@ -146,14 +157,14 @@ export const useSessionStore = defineStore("SessionStore", {
       const cell = Number(master_piece.position.toString()[1]);
 
       this.summon_highlight_positions = [
-        this.currentPosition(row, cell) - 9, // Top Left
-        this.currentPosition(row, cell) - 10, // Top Center
-        this.currentPosition(row, cell) - 11, // Top Right
-        this.currentPosition(row, cell) + 9, // Bottom Left
-        this.currentPosition(row, cell) + 10, // Bottom Center
-        this.currentPosition(row, cell) + 11, // Bottom Right
-        this.currentPosition(row, cell) - 1, // Left Center
-        this.currentPosition(row, cell) + 1, // Right Center
+        this.getFullPosition(row, cell) - 9, // Top Left
+        this.getFullPosition(row, cell) - 10, // Top Center
+        this.getFullPosition(row, cell) - 11, // Top Right
+        this.getFullPosition(row, cell) + 9, // Bottom Left
+        this.getFullPosition(row, cell) + 10, // Bottom Center
+        this.getFullPosition(row, cell) + 11, // Bottom Right
+        this.getFullPosition(row, cell) - 1, // Left Center
+        this.getFullPosition(row, cell) + 1, // Right Center
       ];
       this.is_summoning = true;
       this.card_to_summon = cardId;
@@ -175,6 +186,22 @@ export const useSessionStore = defineStore("SessionStore", {
     closeCardTable() {
       this.is_card_table_open = false;
     },
+    openAttackOverlay(defenderId: string) {
+      this.is_attacking = true;
+
+      const attacker_card = this.cards.find(
+        (c) => c.id == this.piece_to_move.id
+      ) as Card;
+      const deffender_card = this.cards.find((c) => c.id == defenderId) as Card;
+
+      this.attacking_cards = [attacker_card, deffender_card];
+    },
+    closeAttackingOverlay() {
+      console.log("closing overlay");
+
+      this.is_attacking = false;
+    },
+    setAttackingCards(firstId: string, secondId: string) {},
   },
   getters: {
     whos_turn: (state) => (state.player_turn ? "White" : "Red"),
@@ -182,9 +209,14 @@ export const useSessionStore = defineStore("SessionStore", {
       const master = state.board_pieces.find((bp) => bp.name == "Master");
       return master;
     },
-    currentPosition() {
+    getFullPosition() {
       return (row: number, cell: number) => {
         return Number(`${row}${cell}`);
+      };
+    },
+    getSplitPosition() {
+      return (position: number | string): number[] => {
+        return [Number(position.toString()[0]), Number(position.toString()[1])];
       };
     },
     getLayoutPosition() {
@@ -201,7 +233,7 @@ export const useSessionStore = defineStore("SessionStore", {
     getPiece() {
       return (row: number, cell: number) => {
         const find_piece = this.board_pieces.find(
-          (bp) => bp.position == this.currentPosition(row, cell)
+          (bp) => bp.position == this.getFullPosition(row, cell)
         );
         return find_piece;
       };
@@ -209,7 +241,7 @@ export const useSessionStore = defineStore("SessionStore", {
     hasPiece() {
       return (row: number, cell: number) => {
         const find_piece = this.board_pieces.find(
-          (bp) => bp.position == this.currentPosition(row, cell)
+          (bp) => bp.position == this.getFullPosition(row, cell)
         );
 
         if (find_piece) {
@@ -220,7 +252,7 @@ export const useSessionStore = defineStore("SessionStore", {
     nextToPiece() {
       return (row: number, cell: number) => {
         return this.move_highlight_positions.find(
-          (mhp) => mhp === this.currentPosition(row, cell)
+          (mhp) => mhp === this.getFullPosition(row, cell)
         );
       };
     },
@@ -235,7 +267,7 @@ export const useSessionStore = defineStore("SessionStore", {
       return (row: number, cell: number) => {
         if (this.is_moving && this.canHighlight(row, cell)) {
           const has_highlights = this.move_highlight_positions.find(
-            (hp: number) => hp == this.currentPosition(row, cell)
+            (hp: number) => hp == this.getFullPosition(row, cell)
           );
 
           if (has_highlights) return true;
@@ -247,7 +279,7 @@ export const useSessionStore = defineStore("SessionStore", {
       return (row: number, cell: number) => {
         if (this.is_summoning && this.canHighlight(row, cell)) {
           const has_highlights = this.summon_highlight_positions.find(
-            (hp: number) => hp == this.currentPosition(row, cell)
+            (hp: number) => hp == this.getFullPosition(row, cell)
           );
 
           if (has_highlights) return true;

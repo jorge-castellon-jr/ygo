@@ -24,5 +24,11 @@ const cards = sessionStore.cards;
   .close {
     @apply absolute right-0 top-0 m-2;
   }
+
+  .card {
+    &:hover {
+      @apply scale-110 -translate-y-3;
+    }
+  }
 }
 </style>

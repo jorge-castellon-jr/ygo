@@ -32,10 +32,6 @@ const summonCard = () => sessionStore.highlightSummonArea(card.id);
 .card {
   @apply relative p-3 pb-6 w-full h-60 border-2 border-slate-400 rounded-lg  overflow-hidden transition-transform cursor-pointer;
 
-  &:hover {
-    @apply scale-110 -translate-y-3;
-  }
-
   &__title {
     @apply font-bold;
   }
